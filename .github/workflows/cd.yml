@@ -1,0 +1,69 @@
+# user-management/.github/workflows/cd.yml
+name: CD
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+
+jobs:
+  deploy-staging:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      - name: Configure kubeconfig for staging
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+      - name: Deploy to staging
+        run: |
+          kubectl apply -f k8s/deployment.yaml -n staging
+          kubectl apply -f k8s/service.yaml    -n staging
+
+  approval:
+    needs: deploy-staging
+    runs-on: ubuntu-latest
+    outputs:
+      approved: ${{ steps.wait_for_approval.outputs.approved }}
+    steps:
+      - name: Manual Approval
+        id: wait_for_approval
+        uses: hmarr/auto-approve-action@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          message: "Staging başarılı. Production’a geçiş için onay ver?"
+
+  deploy-production:
+    if: ${{ needs.approval.outputs.approved == 'true' }}
+    needs: approval
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: azure/setup-kubectl@v3
+        with:
+          version: 'latest'
+      - name: Configure kubeconfig for production
+        run: |
+          echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 -d > kubeconfig
+          export KUBECONFIG=$PWD/kubeconfig
+      - name: Deploy to production
+        run: |
+          kubectl apply -f k8s/deployment.yaml -n production
+          kubectl apply -f k8s/service.yaml    -n production
+      - name: Notify Slack (design only)
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data '{"text":"✅ user-management production’a deploy edildi."}' \
+            ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  rollback-strategy:
+    name: Rollback Strategy (docs)
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          echo "Rollback komutu:"
+          echo "kubectl rollout undo deployment/user-management -n production"
