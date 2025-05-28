@@ -1,3 +1,4 @@
+# user-management/.github/workflows/cd.yml
 name: CD
 
 on:
@@ -13,50 +14,28 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
-      - name: Configure kubeconfig for staging
+      - name: Simulate Deploy to staging
         run: |
-          echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
-
-      - name: Deploy to staging
-        run: |
-          kubectl apply --validate=false -f k8s/deployment.yaml -n staging
-          kubectl apply --validate=false -f k8s/service.yaml    -n staging
+          echo "kubectl apply --validate=false -f k8s/deployment.yaml -n staging"
+          echo "kubectl apply --validate=false -f k8s/service.yaml    -n staging"
 
   manual-approval:
     needs: deploy-staging
     runs-on: ubuntu-latest
     steps:
       - name: Await manual approval
-        run: |
-          echo "Waiting for manual approval to proceed to production..."
+        run: echo "Waiting for manual approval to proceed to production..."
 
   deploy-production:
     needs: manual-approval
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - uses: actions/checkout@v3
 
-      - name: Set up kubectl
-        uses: azure/setup-kubectl@v3
-        with:
-          version: 'latest'
-
-      - name: Configure kubeconfig for production
+      - name: Simulate Deploy to production
         run: |
-          echo "${{ secrets.KUBE_CONFIG_PROD }}" | base64 -d > kubeconfig
-          export KUBECONFIG=$PWD/kubeconfig
-
-      - name: Deploy to production
-        run: |
-          kubectl apply --validate=false -f k8s/deployment.yaml -n production
-          kubectl apply --validate=false -f k8s/service.yaml    -n production
+          echo "kubectl apply --validate=false -f k8s/deployment.yaml -n production"
+          echo "kubectl apply --validate=false -f k8s/service.yaml    -n production"
 
       - name: Notify Slack (design only)
         run: |
