@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: user-management
+  namespace: PLACEHOLDER   # staging veya production yazacağız
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: user-management
+  template:
+    metadata:
+      labels:
+        app: user-management
+    spec:
+      containers:
+        - name: user-management
+          image: ghcr.io/${{ github.repository_owner }}/user-management:${{ github.sha }}
+          ports:
+            - containerPort: 80
+          env:
+            - name: API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: user-management-secrets
+                  key: api-key
