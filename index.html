@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <title>User Management</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Kullanıcı Girişi (Simülasyon)</h1>
+  <ul id="users"></ul>
+  <script>
+    fetch('users.json')
+      .then(r => r.json())
+      .then(users => {
+        const ul = document.getElementById('users');
+        users.forEach(u => {
+          const li = document.createElement('li');
+          li.textContent = `${u.name} (@${u.username})`;
+          ul.appendChild(li);
+        });
+      });
+  </script>
+</body>
+</html>
