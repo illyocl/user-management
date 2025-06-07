@@ -1,4 +1,3 @@
-# user-management/.github/workflows/cd.yml
 name: CD
 
 on:
@@ -16,38 +15,43 @@ jobs:
 
       - name: Simulate Deploy to staging
         run: |
-          echo "kubectl apply --validate=false -f k8s/deployment.yaml -n staging"
-          echo "kubectl apply --validate=false -f k8s/service.yaml    -n staging"
+          echo "Simulating: kubectl apply --validate=false -f k8s/deployment.yaml -n staging"
+          echo "Simulating: kubectl apply --validate=false -f k8s/service.yaml    -n staging"
 
   manual-approval:
     needs: deploy-staging
     runs-on: ubuntu-latest
     steps:
       - name: Await manual approval
-        run: echo "Waiting for manual approval to proceed to production..."
+        run: echo "Manual approval step placeholder. See 'environment' block in deploy-production."
+        # Artık sadece placeholder – gerçek onay aşağıda yapılır
 
   deploy-production:
     needs: manual-approval
     runs-on: ubuntu-latest
+    environment:
+      name: production  # Bu ortamdan manuel onay gerekecek
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Simulate Deploy to production
         run: |
-          echo "kubectl apply --validate=false -f k8s/deployment.yaml -n production"
-          echo "kubectl apply --validate=false -f k8s/service.yaml    -n production"
+          echo "Simulating: kubectl apply --validate=false -f k8s/deployment.yaml -n production"
+          echo "Simulating: kubectl apply --validate=false -f k8s/service.yaml    -n production"
 
-      - name: Notify Slack (design only)
+      - name: Notify Slack
         run: |
           curl -X POST -H 'Content-type: application/json' \
             --data '{"text":"✅ user-management production’a deploy edildi."}' \
             ${{ secrets.SLACK_WEBHOOK_URL }}
 
-  rollback-strategy:
-    name: Rollback Strategy (docs)
+  rollback-on-failure:
+    needs: deploy-production
+    if: failure()
     runs-on: ubuntu-latest
     steps:
-      - name: Document Rollback Command
+      - name: Rollback Deployment
         run: |
-          echo "Rollback komutu:"
-          echo "kubectl rollout undo deployment/user-management -n production"
+          echo "❌ Deploy başarısız oldu, rollback başlatılıyor..."
+          kubectl rollout undo deployment/user-management -n production
