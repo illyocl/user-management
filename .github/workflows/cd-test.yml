@@ -1,0 +1,26 @@
+name: CD-TEST
+
+on:
+  workflow_dispatch:  # elle tetiklenir, güvenlidir
+
+jobs:
+  simulate-deploy-production:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Simulate Faulty Production Deploy
+        run: |
+          echo "Simulating production deploy (with failure)..."
+          exit 1  # ← bu bilinçli hata rollback'i tetikleyecek
+
+  rollback-on-failure:
+    needs: simulate-deploy-production
+    if: failure()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Rollback Deployment (Test)
+        run: |
+          echo "❌ Deploy başarısız oldu, rollback başlatılıyor..."
+          echo "Komut: kubectl rollout undo deployment/test-deployment -n production"
