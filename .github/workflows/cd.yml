@@ -24,13 +24,13 @@ jobs:
     steps:
       - name: Await manual approval
         run: echo "Manual approval step placeholder. See 'environment' block in deploy-production."
-        # Artık sadece placeholder – gerçek onay aşağıda yapılır
+        
 
   deploy-production:
     needs: manual-approval
     runs-on: ubuntu-latest
     environment:
-      name: production  # Bu ortamdan manuel onay gerekecek
+      name: production  
     steps:
       - name: Checkout code
         uses: actions/checkout@v3

@@ -1,7 +1,7 @@
 name: CD-TEST
 
 on:
-  workflow_dispatch:  # elle tetiklenir, güvenlidir
+  workflow_dispatch:  
 
 jobs:
   simulate-deploy-production:
